@@ -809,8 +809,7 @@ dependencies = [
 [[package]]
 name = "elements"
 version = "0.24.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd6b8388053196e6b2702a45418078a654680ce9e1fd91799f51f67a40118ff5"
+source = "git+https://github.com/SequentiaSEQ/rust-sequentia?branch=0.24.1"
 dependencies = [
  "bitcoin 0.31.2",
  "secp256k1-zkp",

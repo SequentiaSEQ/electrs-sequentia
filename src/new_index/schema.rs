@@ -1,5 +1,5 @@
 use bitcoin::hashes::sha256d::Hash as Sha256dHash;
-#[cfg(not(feature = "liquid"))]
+#[cfg(not(feature = "sequentia"))]
 use bitcoin::merkle_tree::MerkleBlock;
 use bitcoin::VarInt;
 use crypto::digest::Digest;
@@ -8,9 +8,9 @@ use hex::FromHex;
 use itertools::Itertools;
 use rayon::prelude::*;
 
-#[cfg(not(feature = "liquid"))]
+#[cfg(not(feature = "sequentia"))]
 use bitcoin::consensus::encode::{deserialize, serialize};
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 use elements::{
     confidential,
     encode::{deserialize, serialize},
@@ -36,7 +36,7 @@ use crate::util::{
 use crate::new_index::db::{DBFlush, DBRow, ReverseScanIterator, ScanIterator, DB};
 use crate::new_index::fetch::{start_fetcher, BlockEntry, FetchFrom};
 
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 use crate::elements::{asset, peg};
 
 const MIN_HISTORY_ITEMS_TO_CACHE: usize = 100;
@@ -112,11 +112,11 @@ pub struct Utxo {
     pub confirmed: Option<BlockId>,
     pub value: Value,
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     pub asset: confidential::Asset,
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     pub nonce: confidential::Nonce,
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     pub witness: elements::TxOutWitness,
 }
 
@@ -141,9 +141,9 @@ pub struct ScriptStats {
     pub tx_count: usize,
     pub funded_txo_count: usize,
     pub spent_txo_count: usize,
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     pub funded_txo_sum: u64,
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     pub spent_txo_sum: u64,
 }
 
@@ -153,9 +153,9 @@ impl ScriptStats {
             tx_count: 0,
             funded_txo_count: 0,
             spent_txo_count: 0,
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             funded_txo_sum: 0,
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             spent_txo_sum: 0,
         }
     }
@@ -175,7 +175,7 @@ struct IndexerConfig {
     address_search: bool,
     index_unspendables: bool,
     network: Network,
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     parent_network: crate::chain::BNetwork,
 }
 
@@ -186,7 +186,7 @@ impl From<&Config> for IndexerConfig {
             address_search: config.address_search,
             index_unspendables: config.index_unspendables,
             network: config.network_type,
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             parent_network: config.parent_network,
         }
     }
@@ -562,10 +562,10 @@ impl ChainQuery {
         Ok(newutxos
             .into_iter()
             .map(|(outpoint, (blockid, value))| {
-                // in elements/liquid chains, we have to lookup the txo in order to get its
+                // in elements/sequentia chains, we have to lookup the txo in order to get its
                 // associated asset. the asset information could be kept in the db history rows
                 // alongside the value to avoid this.
-                #[cfg(feature = "liquid")]
+                #[cfg(feature = "sequentia")]
                 let txo = self.lookup_txo(&outpoint).expect("missing utxo");
 
                 Utxo {
@@ -574,11 +574,11 @@ impl ChainQuery {
                     value,
                     confirmed: Some(blockid),
 
-                    #[cfg(feature = "liquid")]
+                    #[cfg(feature = "sequentia")]
                     asset: txo.asset,
-                    #[cfg(feature = "liquid")]
+                    #[cfg(feature = "sequentia")]
                     nonce: txo.nonce,
-                    #[cfg(feature = "liquid")]
+                    #[cfg(feature = "sequentia")]
                     witness: txo.witness,
                 }
             })
@@ -614,7 +614,7 @@ impl ChainQuery {
                     utxos.insert(history.get_funded_outpoint(), (blockid, info.value))
                 }
                 TxHistoryInfo::Spending(_) => utxos.remove(&history.get_funded_outpoint()),
-                #[cfg(feature = "liquid")]
+                #[cfg(feature = "sequentia")]
                 TxHistoryInfo::Issuing(_)
                 | TxHistoryInfo::Burning(_)
                 | TxHistoryInfo::Pegin(_)
@@ -696,29 +696,29 @@ impl ChainQuery {
             }
 
             match history.key.txinfo {
-                #[cfg(not(feature = "liquid"))]
+                #[cfg(not(feature = "sequentia"))]
                 TxHistoryInfo::Funding(ref info) => {
                     stats.funded_txo_count += 1;
                     stats.funded_txo_sum += info.value;
                 }
 
-                #[cfg(not(feature = "liquid"))]
+                #[cfg(not(feature = "sequentia"))]
                 TxHistoryInfo::Spending(ref info) => {
                     stats.spent_txo_count += 1;
                     stats.spent_txo_sum += info.value;
                 }
 
-                #[cfg(feature = "liquid")]
+                #[cfg(feature = "sequentia")]
                 TxHistoryInfo::Funding(_) => {
                     stats.funded_txo_count += 1;
                 }
 
-                #[cfg(feature = "liquid")]
+                #[cfg(feature = "sequentia")]
                 TxHistoryInfo::Spending(_) => {
                     stats.spent_txo_count += 1;
                 }
 
-                #[cfg(feature = "liquid")]
+                #[cfg(feature = "sequentia")]
                 TxHistoryInfo::Issuing(_)
                 | TxHistoryInfo::Burning(_)
                 | TxHistoryInfo::Pegin(_)
@@ -915,7 +915,7 @@ impl ChainQuery {
             })
     }
 
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     pub fn get_merkleblock_proof(&self, txid: &Txid) -> Option<MerkleBlock> {
         let _timer = self.start_timer("get_merkleblock_proof");
         let blockid = self.tx_confirming_block(txid)?;
@@ -929,7 +929,7 @@ impl ChainQuery {
         ))
     }
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     pub fn asset_history(
         &self,
         asset_id: &AssetId,
@@ -939,7 +939,7 @@ impl ChainQuery {
         self._history(b'I', &asset_id.into_inner()[..], last_seen_txid, limit)
     }
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     pub fn asset_history_txids(&self, asset_id: &AssetId, limit: usize) -> Vec<(Txid, BlockId)> {
         self._history_txids(b'I', &asset_id.into_inner()[..], limit)
     }
@@ -1135,7 +1135,7 @@ fn index_transaction(
     }
 
     // Index issued assets & native asset pegins/pegouts/burns
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     asset::index_confirmed_tx_assets(
         tx,
         confirmed_height,
@@ -1380,13 +1380,13 @@ pub enum TxHistoryInfo {
     Funding(FundingInfo),
     Spending(SpendingInfo),
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     Issuing(asset::IssuingInfo),
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     Burning(asset::BurningInfo),
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     Pegin(peg::PeginInfo),
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     Pegout(peg::PegoutInfo),
 }
 
@@ -1396,7 +1396,7 @@ impl TxHistoryInfo {
             TxHistoryInfo::Funding(FundingInfo { txid, .. })
             | TxHistoryInfo::Spending(SpendingInfo { txid, .. }) => deserialize(txid),
 
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             TxHistoryInfo::Issuing(asset::IssuingInfo { txid, .. })
             | TxHistoryInfo::Burning(asset::BurningInfo { txid, .. })
             | TxHistoryInfo::Pegin(peg::PeginInfo { txid, .. })
@@ -1474,7 +1474,7 @@ impl TxHistoryInfo {
                 txid: deserialize(&info.prev_txid).unwrap(),
                 vout: info.prev_vout as u32,
             },
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             TxHistoryInfo::Issuing(_)
             | TxHistoryInfo::Burning(_)
             | TxHistoryInfo::Pegin(_)
@@ -1629,19 +1629,19 @@ fn from_utxo_cache(utxos_cache: CachedUtxoMap, chain: &ChainQuery) -> UtxoMap {
 // Get the amount value as gets stored in the DB and mempool tracker.
 // For bitcoin it is the Amount's inner u64, for elements it is the confidential::Value itself.
 pub trait GetAmountVal {
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     fn amount_value(self) -> u64;
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     fn amount_value(self) -> confidential::Value;
 }
 
-#[cfg(not(feature = "liquid"))]
+#[cfg(not(feature = "sequentia"))]
 impl GetAmountVal for bitcoin::Amount {
     fn amount_value(self) -> u64 {
         self.to_sat()
     }
 }
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 impl GetAmountVal for confidential::Value {
     fn amount_value(self) -> confidential::Value {
         self

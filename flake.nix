@@ -61,9 +61,9 @@
           bin = craneLib.buildPackage (commonArgs // {
             inherit cargoArtifacts;
           });
-          binLiquid = craneLib.buildPackage (commonArgs // {
+          binSequentia = craneLib.buildPackage (commonArgs // {
             inherit cargoArtifacts;
-            cargoExtraArgs = "--features liquid";
+            cargoExtraArgs = "--features sequentia";
           });
 
         in
@@ -73,13 +73,13 @@
             {
               # that way we can build `bin` specifically,
               # but it's also the default.
-              inherit bin binLiquid;
+              inherit bin binSequentia;
               default = bin;
             };
 
           apps."blockstream-electrs-liquid" = {
             type = "app";
-            program = "${binLiquid}/bin/electrs";
+            program = "${binSequentia}/bin/electrs";
           };
           apps."blockstream-electrs" = {
             type = "app";

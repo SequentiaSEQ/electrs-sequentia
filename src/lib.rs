@@ -33,5 +33,5 @@ pub mod rest;
 pub mod signal;
 pub mod util;
 
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 pub mod elements;

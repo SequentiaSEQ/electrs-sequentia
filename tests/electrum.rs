@@ -7,13 +7,13 @@ use electrumd::ElectrumD;
 
 use electrs::chain::Address;
 
-#[cfg(not(feature = "liquid"))]
+#[cfg(not(feature = "sequentia"))]
 use bitcoin::address;
 
 /// Test the Electrum RPC server using an headless Electrum wallet
-/// This only runs on Bitcoin (non-Liquid) mode.
-#[cfg_attr(not(feature = "liquid"), test)]
-#[cfg_attr(feature = "liquid", allow(dead_code))]
+/// This only runs on Bitcoin (non-Sequentia) mode.
+#[cfg_attr(not(feature = "sequentia"), test)]
+#[cfg_attr(feature = "sequentia", allow(dead_code))]
 fn test_electrum() -> Result<()> {
     // Spawn an Electrs Electrum RPC server
     let (electrum_server, electrum_addr, mut tester) = common::init_electrum_tester().unwrap();
@@ -53,9 +53,9 @@ fn test_electrum() -> Result<()> {
     };
 
     let newaddress = || -> Address {
-        #[cfg(not(feature = "liquid"))]
+        #[cfg(not(feature = "sequentia"))]
         type ParseAddrType = Address<address::NetworkUnchecked>;
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         type ParseAddrType = Address;
 
         let addr = electrum_wallet
@@ -66,7 +66,7 @@ fn test_electrum() -> Result<()> {
             .parse::<ParseAddrType>()
             .expect("invalid address");
 
-        #[cfg(not(feature = "liquid"))]
+        #[cfg(not(feature = "sequentia"))]
         let addr = addr.assume_checked();
 
         addr

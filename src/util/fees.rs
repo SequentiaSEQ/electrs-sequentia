@@ -14,7 +14,7 @@ impl TxFeeInfo {
         let fee = get_tx_fee(tx, prevouts, network);
 
         let weight = tx.weight();
-        #[cfg(not(feature = "liquid"))] // rust-bitcoin has a wrapper Weight type
+        #[cfg(not(feature = "sequentia"))] // rust-bitcoin has a wrapper Weight type
         let weight = weight.to_wu();
 
         let vsize_float = weight as f64 / 4f64; // for more accurate sat/vB
@@ -27,7 +27,7 @@ impl TxFeeInfo {
     }
 }
 
-#[cfg(not(feature = "liquid"))]
+#[cfg(not(feature = "sequentia"))]
 pub fn get_tx_fee(tx: &Transaction, prevouts: &HashMap<u32, &TxOut>, _network: Network) -> u64 {
     if tx.is_coinbase() {
         return 0;
@@ -41,7 +41,7 @@ pub fn get_tx_fee(tx: &Transaction, prevouts: &HashMap<u32, &TxOut>, _network: N
     total_in - total_out
 }
 
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 pub fn get_tx_fee(tx: &Transaction, _prevouts: &HashMap<u32, &TxOut>, network: Network) -> u64 {
     tx.fee_in(*network.native_asset())
 }

@@ -1,9 +1,9 @@
 use arraydeque::{ArrayDeque, Wrapping};
 use itertools::{Either, Itertools};
 
-#[cfg(not(feature = "liquid"))]
+#[cfg(not(feature = "sequentia"))]
 use bitcoin::consensus::encode::serialize;
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 use elements::{encode::serialize, AssetId};
 
 use std::collections::{BTreeSet, HashMap, HashSet};
@@ -23,7 +23,7 @@ use crate::new_index::{
 use crate::util::fees::{make_fee_histogram, TxFeeInfo};
 use crate::util::{extract_tx_prevouts, full_hash, get_prev_outpoints, is_spendable, Bytes};
 
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 use crate::elements::asset;
 
 const RECENT_TXS_SIZE: usize = 10;
@@ -45,9 +45,9 @@ pub struct Mempool {
     count: GaugeVec,       // current state of the mempool
 
     // elements only
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     pub asset_history: HashMap<AssetId, Vec<TxHistoryInfo>>,
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     pub asset_issuance: HashMap<AssetId, asset::AssetRow>,
 }
 
@@ -57,7 +57,7 @@ pub struct TxOverview {
     txid: Txid,
     fee: u64,
     vsize: u64,
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     value: u64,
 }
 
@@ -88,9 +88,9 @@ impl Mempool {
                 &["type"],
             ),
 
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             asset_history: HashMap::new(),
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             asset_issuance: HashMap::new(),
         }
     }
@@ -178,8 +178,8 @@ impl Mempool {
             .iter()
             .filter_map(|entry| match entry {
                 TxHistoryInfo::Funding(info) => {
-                    // Liquid requires some additional information from the txo that's not available in the TxHistoryInfo index.
-                    #[cfg(feature = "liquid")]
+                    // Sequentia requires some additional information from the txo that's not available in the TxHistoryInfo index.
+                    #[cfg(feature = "sequentia")]
                     let txo = self
                         .lookup_txo(&entry.get_funded_outpoint())
                         .expect("missing txo");
@@ -190,16 +190,16 @@ impl Mempool {
                         value: info.value,
                         confirmed: None,
 
-                        #[cfg(feature = "liquid")]
+                        #[cfg(feature = "sequentia")]
                         asset: txo.asset,
-                        #[cfg(feature = "liquid")]
+                        #[cfg(feature = "sequentia")]
                         nonce: txo.nonce,
-                        #[cfg(feature = "liquid")]
+                        #[cfg(feature = "sequentia")]
                         witness: txo.witness,
                     })
                 }
                 TxHistoryInfo::Spending(_) => None,
-                #[cfg(feature = "liquid")]
+                #[cfg(feature = "sequentia")]
                 TxHistoryInfo::Issuing(_)
                 | TxHistoryInfo::Burning(_)
                 | TxHistoryInfo::Pegin(_)
@@ -226,28 +226,28 @@ impl Mempool {
             }
 
             match entry {
-                #[cfg(not(feature = "liquid"))]
+                #[cfg(not(feature = "sequentia"))]
                 TxHistoryInfo::Funding(info) => {
                     stats.funded_txo_count += 1;
                     stats.funded_txo_sum += info.value;
                 }
 
-                #[cfg(not(feature = "liquid"))]
+                #[cfg(not(feature = "sequentia"))]
                 TxHistoryInfo::Spending(info) => {
                     stats.spent_txo_count += 1;
                     stats.spent_txo_sum += info.value;
                 }
 
                 // Elements
-                #[cfg(feature = "liquid")]
+                #[cfg(feature = "sequentia")]
                 TxHistoryInfo::Funding(_) => {
                     stats.funded_txo_count += 1;
                 }
-                #[cfg(feature = "liquid")]
+                #[cfg(feature = "sequentia")]
                 TxHistoryInfo::Spending(_) => {
                     stats.spent_txo_count += 1;
                 }
-                #[cfg(feature = "liquid")]
+                #[cfg(feature = "sequentia")]
                 TxHistoryInfo::Issuing(_)
                 | TxHistoryInfo::Burning(_)
                 | TxHistoryInfo::Pegin(_)
@@ -346,7 +346,7 @@ impl Mempool {
                 txid,
                 fee: feeinfo.fee,
                 vsize: feeinfo.vsize,
-                #[cfg(not(feature = "liquid"))]
+                #[cfg(not(feature = "sequentia"))]
                 value: prevouts
                     .values()
                     .map(|prevout| prevout.value.to_sat())
@@ -401,7 +401,7 @@ impl Mempool {
             }
 
             // Index issued assets & native asset pegins/pegouts/burns
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             asset::index_mempool_tx_assets(
                 &tx,
                 self.config.network_type,
@@ -463,7 +463,7 @@ impl Mempool {
             !entries.is_empty()
         });
 
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         asset::remove_mempool_tx_assets(
             &to_remove,
             &mut self.asset_history,
@@ -474,7 +474,7 @@ impl Mempool {
             .retain(|_outpoint, (txid, _vin)| !to_remove.contains(txid));
     }
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     pub fn asset_history(&self, asset_id: &AssetId, limit: usize) -> Vec<Transaction> {
         let _timer = self
             .latency

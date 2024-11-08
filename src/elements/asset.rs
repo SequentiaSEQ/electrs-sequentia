@@ -21,7 +21,7 @@ lazy_static! {
             .parse()
             .unwrap();
     pub static ref NATIVE_ASSET_ID_TESTNET: AssetId =
-        "144c654344aa716d6f3abcc1ca90e5641e4e2a7f633bc09fe3baf64585819a49"
+        "997d61a708543ee56de675c9afebb690007793429967d7a28c61358a033766cd"
             .parse()
             .unwrap();
     pub static ref NATIVE_ASSET_ID_REGTEST: AssetId =
@@ -36,7 +36,7 @@ fn parse_asset_id(sl: &[u8]) -> AssetId {
 
 #[derive(Serialize)]
 #[serde(untagged)]
-pub enum LiquidAsset {
+pub enum SequentiaAsset {
     Issued(IssuedAsset),
     Native(PeggedAsset),
 }
@@ -120,10 +120,10 @@ impl IssuedAsset {
     }
 }
 
-impl LiquidAsset {
+impl SequentiaAsset {
     pub fn supply(&self) -> Option<u64> {
         match self {
-            LiquidAsset::Native(asset) => Some(
+            SequentiaAsset::Native(asset) => Some(
                 asset.chain_stats.peg_in_amount
                     - asset.chain_stats.peg_out_amount
                     - asset.chain_stats.burned_amount
@@ -131,7 +131,7 @@ impl LiquidAsset {
                     - asset.mempool_stats.peg_out_amount
                     - asset.mempool_stats.burned_amount,
             ),
-            LiquidAsset::Issued(asset) => {
+            SequentiaAsset::Issued(asset) => {
                 if asset.chain_stats.has_blinded_issuances
                     || asset.mempool_stats.has_blinded_issuances
                 {
@@ -148,8 +148,8 @@ impl LiquidAsset {
     }
     pub fn precision(&self) -> u8 {
         match self {
-            LiquidAsset::Native(_) => 8,
-            LiquidAsset::Issued(asset) => asset.meta.as_ref().map_or(0, |m| m.precision),
+            SequentiaAsset::Native(_) => 8,
+            SequentiaAsset::Issued(asset) => asset.meta.as_ref().map_or(0, |m| m.precision),
         }
     }
 }
@@ -354,11 +354,11 @@ pub fn lookup_asset(
     registry: Option<&Arc<RwLock<AssetRegistry>>>,
     asset_id: &AssetId,
     meta: Option<&AssetMeta>, // may optionally be provided if already known
-) -> Result<Option<LiquidAsset>> {
+) -> Result<Option<SequentiaAsset>> {
     if query.network().pegged_asset() == Some(asset_id) {
         let (chain_stats, mempool_stats) = pegged_asset_stats(query, asset_id);
 
-        return Ok(Some(LiquidAsset::Native(PeggedAsset {
+        return Ok(Some(SequentiaAsset::Native(PeggedAsset {
             asset_id: *asset_id,
             chain_stats: chain_stats,
             mempool_stats: mempool_stats,
@@ -388,7 +388,7 @@ pub fn lookup_asset(
 
         let asset = IssuedAsset::new(asset_id, row, stats, meta, status);
 
-        Some(LiquidAsset::Issued(asset))
+        Some(SequentiaAsset::Issued(asset))
     } else {
         None
     })
