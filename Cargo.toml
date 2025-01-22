@@ -13,7 +13,7 @@ edition = "2018"
 default-run = "electrs"
 
 [features]
-liquid = ["elements"]
+sequentia = ["elements"]
 electrum-discovery = ["electrum-client"]
 bench = []
 
@@ -58,7 +58,6 @@ tokio = { version = "1", features = ["sync", "macros"] }
 electrum-client = { version = "0.8", optional = true }
 zmq = "0.10.0"
 
-
 [dev-dependencies]
 bitcoind = { version = "0.36", features = ["25_0"] }
 elementsd = { version = "0.11", features = ["22_1_1"] }
@@ -73,17 +72,12 @@ name = "benches"
 harness = false
 required-features = ["bench"]
 
-
 [profile.release]
 lto = true
 panic = 'abort'
 codegen-units = 1
 
-[patch.crates-io.electrum-client]
-git = "https://github.com/Blockstream/rust-electrum-client"
-rev = "d3792352992a539afffbe11501d1aff9fd5b919d"            # add-peer branch
-
-# not yet published on crates.io
-[patch.crates-io.electrumd]
-git = "https://github.com/shesek/electrumd"
-rev = "b35d9db285d932cb3c2296beab65e571a2506349"
+[patch.crates-io]
+electrum-client = { git = "https://github.com/Blockstream/rust-electrum-client", rev = "d3792352992a539afffbe11501d1aff9fd5b919d" }
+electrumd = { git = "https://github.com/shesek/electrumd", rev = "b35d9db285d932cb3c2296beab65e571a2506349" }
+elements = { version = "*", git = "https://github.com/SequentiaSEQ/rust-sequentia", branch = "sequentia-testnet" }

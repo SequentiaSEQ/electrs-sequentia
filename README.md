@@ -17,8 +17,8 @@ $ git clone https://github.com/blockstream/electrs && cd electrs
 $ git checkout new-index
 $ cargo run --release --bin electrs -- -vvvv --daemon-dir ~/.bitcoin
 
-# Or for liquid:
-$ cargo run --features liquid --release --bin electrs -- -vvvv --network liquid --daemon-dir ~/.liquid
+# Or for sequentia:
+$ cargo run --features sequentia --release --bin electrs -- -vvvv --network sequentia --daemon-dir ~/.sequentia
 ```
 
 See [electrs's original documentation](https://github.com/romanz/electrs/blob/master/doc/usage.md) for more detailed instructions.
@@ -55,8 +55,8 @@ but instead queried from bitcoind on demand.
   With these new indexes, bitcoind is no longer queried to serve user requests and is only polled
   periodically for new blocks and for syncing the mempool.
 
-- Support for Liquid and other Elements-based networks, including CT, peg-in/out and multi-asset.
-  (requires enabling the `liquid` feature flag using `--features liquid`)
+- Support for Sequentia and other Elements-based networks, including CT, peg-in/out and multi-asset.
+  (requires enabling the `sequentia` feature flag using `--features sequentia`)
 
 ### CLI options
 
@@ -71,7 +71,7 @@ In addition to electrs's original configuration options, a few new options are a
 - `--electrum-txs-limit <num>` - maximum number of txs to return per address in the electrum server (does not apply for the http api).
 - `--electrum-banner <text>` - welcome banner text for electrum server.
 
-Additional options with the `liquid` feature:
+Additional options with the `sequentia` feature:
 - `--parent-network <network>` - the parent network this chain is pegged to.
 
 Additional options with the `electrum-discovery` feature:

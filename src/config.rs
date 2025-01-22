@@ -11,7 +11,7 @@ use crate::chain::Network;
 use crate::daemon::CookieGetter;
 use crate::errors::*;
 
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 use bitcoin::Network as BNetwork;
 
 const ELECTRS_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -49,9 +49,9 @@ pub struct Config {
     /// however, this requires much more disk space.
     pub initial_sync_compaction: bool,
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     pub parent_network: BNetwork,
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     pub asset_db_path: Option<PathBuf>,
 
     #[cfg(feature = "electrum-discovery")]
@@ -224,7 +224,7 @@ impl Config {
                     .takes_value(true),
             );
 
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         let args = args
             .arg(
                 Arg::with_name("parent_network")
@@ -235,7 +235,7 @@ impl Config {
             .arg(
                 Arg::with_name("asset_db_path")
                     .long("asset-db-path")
-                    .help("Directory for liquid/elements asset db")
+                    .help("Directory for sequentia/elements asset db")
                     .takes_value(true),
             );
 
@@ -263,84 +263,86 @@ impl Config {
         let db_dir = Path::new(m.value_of("db_dir").unwrap_or("./db"));
         let db_path = db_dir.join(network_name);
 
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         let parent_network = m
             .value_of("parent_network")
             .map(|s| s.parse().expect("invalid parent network"))
             .unwrap_or_else(|| match network_type {
-                Network::Liquid => BNetwork::Bitcoin,
-                // XXX liquid testnet/regtest don't have a parent chain
-                Network::LiquidTestnet | Network::LiquidRegtest => BNetwork::Regtest,
+                Network::Sequentia => BNetwork::Bitcoin,
+                // XXX sequentia testnet/regtest don't have a parent chain
+                Network::SequentiaTestnet | Network::SequentiaRegtest => BNetwork::Regtest,
             });
 
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         let asset_db_path = m.value_of("asset_db_path").map(PathBuf::from);
 
         let default_daemon_port = match network_type {
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             Network::Bitcoin => 8332,
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             Network::Testnet => 18332,
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             Network::Regtest => 18443,
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             Network::Signet => 38332,
 
-            #[cfg(feature = "liquid")]
-            Network::Liquid => 7041,
-            #[cfg(feature = "liquid")]
-            Network::LiquidTestnet | Network::LiquidRegtest => 7040,
+            #[cfg(feature = "sequentia")]
+            Network::Sequentia => 7041,
+            #[cfg(feature = "sequentia")]
+            Network::SequentiaTestnet => 18776,
+            #[cfg(feature = "sequentia")]
+            Network::SequentiaRegtest => 7040,
         };
         let default_electrum_port = match network_type {
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             Network::Bitcoin => 50001,
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             Network::Testnet => 60001,
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             Network::Regtest => 60401,
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             Network::Signet => 60601,
 
-            #[cfg(feature = "liquid")]
-            Network::Liquid => 51000,
-            #[cfg(feature = "liquid")]
-            Network::LiquidTestnet => 51301,
-            #[cfg(feature = "liquid")]
-            Network::LiquidRegtest => 51401,
+            #[cfg(feature = "sequentia")]
+            Network::Sequentia => 51001,
+            #[cfg(feature = "sequentia")]
+            Network::SequentiaTestnet => 51101,
+            #[cfg(feature = "sequentia")]
+            Network::SequentiaRegtest => 51201,
         };
         let default_http_port = match network_type {
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             Network::Bitcoin => 3000,
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             Network::Testnet => 3001,
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             Network::Regtest => 3002,
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             Network::Signet => 3003,
 
-            #[cfg(feature = "liquid")]
-            Network::Liquid => 3000,
-            #[cfg(feature = "liquid")]
-            Network::LiquidTestnet => 3001,
-            #[cfg(feature = "liquid")]
-            Network::LiquidRegtest => 3002,
+            #[cfg(feature = "sequentia")]
+            Network::Sequentia => 3000,
+            #[cfg(feature = "sequentia")]
+            Network::SequentiaTestnet => 3001,
+            #[cfg(feature = "sequentia")]
+            Network::SequentiaRegtest => 3002,
         };
         let default_monitoring_port = match network_type {
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             Network::Bitcoin => 4224,
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             Network::Testnet => 14224,
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             Network::Regtest => 24224,
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             Network::Signet => 54224,
 
-            #[cfg(feature = "liquid")]
-            Network::Liquid => 34224,
-            #[cfg(feature = "liquid")]
-            Network::LiquidTestnet => 44324,
-            #[cfg(feature = "liquid")]
-            Network::LiquidRegtest => 44224,
+            #[cfg(feature = "sequentia")]
+            Network::Sequentia => 34224,
+            #[cfg(feature = "sequentia")]
+            Network::SequentiaTestnet => 44324,
+            #[cfg(feature = "sequentia")]
+            Network::SequentiaRegtest => 44224,
         };
 
         let daemon_rpc_addr: SocketAddr = str_to_socketaddr(
@@ -378,7 +380,7 @@ impl Config {
                 default_dir
             });
 
-        if let Some(network_subdir) = get_network_subdir(network_type) {
+        if let Some(network_subdir) = get_network_subdir(network_type, network_name) {
             daemon_dir.push(network_subdir);
         }
         let blocks_dir = m
@@ -433,9 +435,9 @@ impl Config {
             initial_sync_compaction: m.is_present("initial_sync_compaction"),
             zmq_addr,
 
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             parent_network,
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             asset_db_path,
 
             #[cfg(feature = "electrum-discovery")]
@@ -485,23 +487,23 @@ impl From<&str> for RpcLogging {
     }
 }
 
-pub fn get_network_subdir(network: Network) -> Option<&'static str> {
+pub fn get_network_subdir(network: Network, _name: &str) -> Option<&'static str> {
     match network {
-        #[cfg(not(feature = "liquid"))]
+        #[cfg(not(feature = "sequentia"))]
         Network::Bitcoin => None,
-        #[cfg(not(feature = "liquid"))]
+        #[cfg(not(feature = "sequentia"))]
         Network::Testnet => Some("testnet3"),
-        #[cfg(not(feature = "liquid"))]
+        #[cfg(not(feature = "sequentia"))]
         Network::Regtest => Some("regtest"),
-        #[cfg(not(feature = "liquid"))]
+        #[cfg(not(feature = "sequentia"))]
         Network::Signet => Some("signet"),
 
-        #[cfg(feature = "liquid")]
-        Network::Liquid => Some("liquidv1"),
-        #[cfg(feature = "liquid")]
-        Network::LiquidTestnet => Some("liquidtestnet"),
-        #[cfg(feature = "liquid")]
-        Network::LiquidRegtest => Some("liquidregtest"),
+        #[cfg(feature = "sequentia")]
+        Network::Sequentia => Some("mainnet"),
+        #[cfg(feature = "sequentia")]
+        Network::SequentiaTestnet => Some("testnet3"),
+        #[cfg(feature = "sequentia")]
+        Network::SequentiaRegtest => Some(Box::leak(_name.to_string().into_boxed_str())),
     }
 }
 

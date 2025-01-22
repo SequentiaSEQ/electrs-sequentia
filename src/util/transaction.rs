@@ -3,14 +3,14 @@ use crate::util::BlockId;
 
 use std::collections::{BTreeSet, HashMap};
 
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 lazy_static! {
     static ref REGTEST_INITIAL_ISSUANCE_PREVOUT: Txid =
         "50cdc410c9d0d61eeacc531f52d2c70af741da33af127c364e52ac1ee7c030a5"
             .parse()
             .unwrap();
     static ref TESTNET_INITIAL_ISSUANCE_PREVOUT: Txid =
-        "0c52d2526a5c9f00e9fb74afd15dd3caaf17c823159a514f929ae25193a43a52"
+        "c699280ecce8d124128648c825018670464193d76b2d385887dc038e255dd729"
             .parse()
             .unwrap();
 }
@@ -52,16 +52,16 @@ pub struct TxInput {
 }
 
 pub fn is_coinbase(txin: &TxIn) -> bool {
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     return txin.previous_output.is_null();
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     return txin.is_coinbase();
 }
 
 pub fn has_prevout(txin: &TxIn) -> bool {
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     return !txin.previous_output.is_null();
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     return !txin.is_coinbase()
         && !txin.is_pegin
         && txin.previous_output.txid != *REGTEST_INITIAL_ISSUANCE_PREVOUT
@@ -69,9 +69,9 @@ pub fn has_prevout(txin: &TxIn) -> bool {
 }
 
 pub fn is_spendable(txout: &TxOut) -> bool {
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     return !txout.script_pubkey.is_op_return();
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     return !txout.is_fee() && !txout.script_pubkey.is_provably_unspendable();
 }
 

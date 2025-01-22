@@ -13,9 +13,9 @@ use crypto::sha2::Sha256;
 use error_chain::ChainedError;
 use serde_json::{from_str, Value};
 
-#[cfg(not(feature = "liquid"))]
+#[cfg(not(feature = "sequentia"))]
 use bitcoin::consensus::encode::serialize_hex;
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 use elements::encode::serialize_hex;
 
 use crate::chain::Txid;
@@ -302,7 +302,7 @@ impl Connection {
         }
     }
 
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     fn blockchain_scripthash_get_balance(&self, params: &[Value]) -> Result<Value> {
         let script_hash = hash_from_value(params.get(0)).chain_err(|| "bad script_hash")?;
         let (chain_stats, mempool_stats) = self.query.stats(&script_hash[..]);
@@ -343,7 +343,7 @@ impl Connection {
                 "value": utxo.value,
             });
 
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             let json = {
                 let mut json = json;
                 json["asset"] = json!(utxo.asset);
@@ -437,7 +437,7 @@ impl Connection {
             "blockchain.estimatefee" => self.blockchain_estimatefee(&params),
             "blockchain.headers.subscribe" => self.blockchain_headers_subscribe(),
             "blockchain.relayfee" => self.blockchain_relayfee(),
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             "blockchain.scripthash.get_balance" => self.blockchain_scripthash_get_balance(&params),
             "blockchain.scripthash.get_history" => self.blockchain_scripthash_get_history(&params),
             "blockchain.scripthash.listunspent" => self.blockchain_scripthash_listunspent(&params),

@@ -11,10 +11,10 @@ use crate::errors::*;
 use crate::new_index::{ChainQuery, Mempool, ScriptStats, SpendingInput, Utxo};
 use crate::util::{is_spendable, BlockId, Bytes, TransactionStatus};
 
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 use crate::{
     chain::AssetId,
-    elements::{ebcompact::TxidCompat, lookup_asset, AssetRegistry, AssetSorting, LiquidAsset},
+    elements::{ebcompact::TxidCompat, lookup_asset, AssetRegistry, AssetSorting, SequentiaAsset},
 };
 
 const FEE_ESTIMATES_TTL: u64 = 60; // seconds
@@ -31,12 +31,12 @@ pub struct Query {
     config: Arc<Config>,
     cached_estimates: RwLock<(HashMap<u16, f64>, Option<Instant>)>,
     cached_relayfee: RwLock<Option<f64>>,
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     asset_db: Option<Arc<RwLock<AssetRegistry>>>,
 }
 
 impl Query {
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     pub fn new(
         chain: Arc<ChainQuery>,
         mempool: Arc<RwLock<Mempool>>,
@@ -214,7 +214,7 @@ impl Query {
         Ok(relayfee)
     }
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     pub fn new(
         chain: Arc<ChainQuery>,
         mempool: Arc<RwLock<Mempool>>,
@@ -233,18 +233,18 @@ impl Query {
         }
     }
 
-    #[cfg(feature = "liquid")]
-    pub fn lookup_asset(&self, asset_id: &AssetId) -> Result<Option<LiquidAsset>> {
+    #[cfg(feature = "sequentia")]
+    pub fn lookup_asset(&self, asset_id: &AssetId) -> Result<Option<SequentiaAsset>> {
         lookup_asset(&self, self.asset_db.as_ref(), asset_id, None)
     }
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     pub fn list_registry_assets(
         &self,
         start_index: usize,
         limit: usize,
         sorting: AssetSorting,
-    ) -> Result<(usize, Vec<LiquidAsset>)> {
+    ) -> Result<(usize, Vec<SequentiaAsset>)> {
         let asset_db = match &self.asset_db {
             None => return Ok((0, vec![])),
             Some(db) => db.read().unwrap(),

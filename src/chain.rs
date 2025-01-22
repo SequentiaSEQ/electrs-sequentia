@@ -1,11 +1,11 @@
-#[cfg(not(feature = "liquid"))] // use regular Bitcoin data structures
+#[cfg(not(feature = "sequentia"))] // use regular Bitcoin data structures
 pub use bitcoin::{
     address, blockdata::block::Header as BlockHeader, blockdata::script, consensus::deserialize,
     hash_types::TxMerkleNode, Address, Block, BlockHash, OutPoint, ScriptBuf as Script, Sequence,
     Transaction, TxIn, TxOut, Txid,
 };
 
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 pub use {
     crate::elements::asset,
     elements::{
@@ -17,83 +17,83 @@ pub use {
 use bitcoin::blockdata::constants::genesis_block;
 pub use bitcoin::network::Network as BNetwork;
 
-#[cfg(not(feature = "liquid"))]
+#[cfg(not(feature = "sequentia"))]
 pub type Value = u64;
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 pub use confidential::Value;
 
 #[derive(Debug, Copy, Clone, PartialEq, Hash, Serialize, Ord, PartialOrd, Eq)]
 pub enum Network {
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     Bitcoin,
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     Testnet,
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     Regtest,
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     Signet,
 
-    #[cfg(feature = "liquid")]
-    Liquid,
-    #[cfg(feature = "liquid")]
-    LiquidTestnet,
-    #[cfg(feature = "liquid")]
-    LiquidRegtest,
+    #[cfg(feature = "sequentia")]
+    Sequentia,
+    #[cfg(feature = "sequentia")]
+    SequentiaTestnet,
+    #[cfg(feature = "sequentia")]
+    SequentiaRegtest,
 }
 
 impl Network {
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     pub fn magic(self) -> u32 {
         u32::from_le_bytes(BNetwork::from(self).magic().to_bytes())
     }
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     pub fn magic(self) -> u32 {
         match self {
-            Network::Liquid | Network::LiquidRegtest => 0xDAB5_BFFA,
-            Network::LiquidTestnet => 0x62DD_0E41,
+            Network::Sequentia => 0xDAB5_BFFA,
+            Network::SequentiaTestnet => 0xE0BA_01EF,
+            Network::SequentiaRegtest => 0x0EF2_1953,
         }
     }
 
     pub fn is_regtest(self) -> bool {
         match self {
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             Network::Regtest => true,
-            #[cfg(feature = "liquid")]
-            Network::LiquidRegtest => true,
+            #[cfg(feature = "sequentia")]
+            Network::SequentiaRegtest => true,
             _ => false,
         }
     }
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     pub fn address_params(self) -> &'static address::AddressParams {
-        // Liquid regtest uses elements's address params
+        // Sequentia regtest uses elements's address params
         match self {
-            Network::Liquid => &address::AddressParams::LIQUID,
-            Network::LiquidRegtest => &address::AddressParams::ELEMENTS,
-            Network::LiquidTestnet => &address::AddressParams::LIQUID_TESTNET,
+            Network::Sequentia => &address::AddressParams::SEQUENTIA,
+            Network::SequentiaTestnet => &address::AddressParams::SEQUENTIA_TESTNET,
+            Network::SequentiaRegtest => &address::AddressParams::ELEMENTS,
         }
     }
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     pub fn native_asset(self) -> &'static AssetId {
         match self {
-            Network::Liquid => &*asset::NATIVE_ASSET_ID,
-            Network::LiquidTestnet => &*asset::NATIVE_ASSET_ID_TESTNET,
-            Network::LiquidRegtest => &*asset::NATIVE_ASSET_ID_REGTEST,
+            Network::Sequentia => &*asset::NATIVE_ASSET_ID,
+            Network::SequentiaTestnet => &*asset::NATIVE_ASSET_ID_TESTNET,
+            Network::SequentiaRegtest => &*asset::NATIVE_ASSET_ID_REGTEST,
         }
     }
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     pub fn pegged_asset(self) -> Option<&'static AssetId> {
         match self {
-            Network::Liquid => Some(&*asset::NATIVE_ASSET_ID),
-            Network::LiquidTestnet | Network::LiquidRegtest => None,
+             Network::Sequentia | Network::SequentiaTestnet | Network::SequentiaRegtest => None,
         }
     }
 
     pub fn names() -> Vec<String> {
-        #[cfg(not(feature = "liquid"))]
+        #[cfg(not(feature = "sequentia"))]
         return vec![
             "mainnet".to_string(),
             "testnet".to_string(),
@@ -101,20 +101,20 @@ impl Network {
             "signet".to_string(),
         ];
 
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         return vec![
-            "liquid".to_string(),
-            "liquidtestnet".to_string(),
-            "liquidregtest".to_string(),
+            "mainnet".to_string(),
+            "testnet".to_string(),
+            "regtest".to_string(),
         ];
     }
 }
 
 pub fn genesis_hash(network: Network) -> BlockHash {
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     return bitcoin_genesis_hash(network.into());
-    #[cfg(feature = "liquid")]
-    return liquid_genesis_hash(network);
+    #[cfg(feature = "sequentia")]
+    return sequentia_genesis_hash(network);
 }
 
 pub fn bitcoin_genesis_hash(network: BNetwork) -> bitcoin::BlockHash {
@@ -137,20 +137,25 @@ pub fn bitcoin_genesis_hash(network: BNetwork) -> bitcoin::BlockHash {
     }
 }
 
-#[cfg(feature = "liquid")]
-pub fn liquid_genesis_hash(network: Network) -> elements::BlockHash {
+#[cfg(feature = "sequentia")]
+pub fn sequentia_genesis_hash(network: Network) -> elements::BlockHash {
     use crate::util::DEFAULT_BLOCKHASH;
 
     lazy_static! {
-        static ref LIQUID_GENESIS: BlockHash =
+        static ref SEQUENTIA_GENESIS: BlockHash =
             "1466275836220db2944ca059a3a10ef6fd2ea684b0688d2c379296888a206003"
+                .parse()
+                .unwrap();
+        static ref SEQUENTIA_TESTNET_GENESIS: BlockHash =
+            "997d61a708543ee56de675c9afebb690007793429967d7a28c61358a033766cd"
                 .parse()
                 .unwrap();
     }
 
     match network {
-        Network::Liquid => *LIQUID_GENESIS,
-        // The genesis block for liquid regtest chains varies based on the chain configuration.
+        Network::Sequentia => *SEQUENTIA_GENESIS,
+        Network::SequentiaTestnet => *SEQUENTIA_TESTNET_GENESIS,
+        // The genesis block for sequentia regtest chains varies based on the chain configuration.
         // This instead uses an all zeroed-out hash, which doesn't matter in practice because its
         // only used for Electrum server discovery, which isn't active on regtest.
         _ => *DEFAULT_BLOCKHASH,
@@ -160,28 +165,29 @@ pub fn liquid_genesis_hash(network: Network) -> elements::BlockHash {
 impl From<&str> for Network {
     fn from(network_name: &str) -> Self {
         match network_name {
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             "mainnet" => Network::Bitcoin,
-            #[cfg(not(feature = "liquid"))]
-            "testnet" => Network::Testnet,
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
+            "testnet1" => Network::Testnet,
+            #[cfg(not(feature = "sequentia"))]
             "regtest" => Network::Regtest,
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             "signet" => Network::Signet,
 
-            #[cfg(feature = "liquid")]
-            "liquid" => Network::Liquid,
-            #[cfg(feature = "liquid")]
-            "liquidtestnet" => Network::LiquidTestnet,
-            #[cfg(feature = "liquid")]
-            "liquidregtest" => Network::LiquidRegtest,
+            #[cfg(feature = "sequentia")]
+            "mainnet" => Network::Sequentia,
+            #[cfg(feature = "sequentia")]
+            "testnet" => Network::SequentiaTestnet,
+            #[cfg(feature = "sequentia")]
+            _ => Network::SequentiaRegtest,
 
+            #[cfg(not(feature = "sequentia"))]
             _ => panic!("unsupported Bitcoin network: {:?}", network_name),
         }
     }
 }
 
-#[cfg(not(feature = "liquid"))]
+#[cfg(not(feature = "sequentia"))]
 impl From<Network> for BNetwork {
     fn from(network: Network) -> Self {
         match network {
@@ -193,7 +199,7 @@ impl From<Network> for BNetwork {
     }
 }
 
-#[cfg(not(feature = "liquid"))]
+#[cfg(not(feature = "sequentia"))]
 impl From<BNetwork> for Network {
     fn from(network: BNetwork) -> Self {
         match network {

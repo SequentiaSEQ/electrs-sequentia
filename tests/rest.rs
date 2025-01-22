@@ -58,13 +58,13 @@ fn test_rest() -> Result<()> {
     // Test GET /address/:address
     let res = get_json(&format!("/address/{}", addr1))?;
     assert_eq!(res["chain_stats"]["funded_txo_count"].as_u64(), Some(1));
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     assert_eq!(
         res["chain_stats"]["funded_txo_sum"].as_u64(),
         Some(119123000)
     );
     assert_eq!(res["mempool_stats"]["funded_txo_count"].as_u64(), Some(1));
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     assert_eq!(
         res["mempool_stats"]["funded_txo_sum"].as_u64(),
         Some(71130000)
@@ -191,7 +191,7 @@ fn test_rest() -> Result<()> {
     );
 
     // Elements-only tests
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     {
         // Test confidential transactions
         {
