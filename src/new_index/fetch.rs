@@ -1,10 +1,10 @@
 use rayon::prelude::*;
 
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 use crate::elements::ebcompact::*;
-#[cfg(not(feature = "liquid"))]
+#[cfg(not(feature = "sequentia"))]
 use bitcoin::consensus::encode::{deserialize, Decodable};
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 use elements::encode::{deserialize, Decodable};
 
 use std::collections::HashMap;

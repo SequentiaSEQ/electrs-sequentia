@@ -7,7 +7,7 @@ pub mod peg;
 mod registry;
 
 use asset::get_issuance_entropy;
-pub use asset::{lookup_asset, LiquidAsset};
+pub use asset::{lookup_asset, SequentiaAsset};
 pub use registry::{AssetRegistry, AssetSorting};
 
 #[derive(Serialize, Deserialize, Clone)]

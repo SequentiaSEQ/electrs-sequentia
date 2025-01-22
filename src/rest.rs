@@ -11,7 +11,7 @@ use crate::util::{
     DEFAULT_BLOCKHASH,
 };
 
-#[cfg(not(feature = "liquid"))]
+#[cfg(not(feature = "sequentia"))]
 use bitcoin::consensus::encode;
 
 use bitcoin::hashes::FromSliceError as HashError;
@@ -24,7 +24,7 @@ use tokio::sync::oneshot;
 use std::fs;
 use std::str::FromStr;
 
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 use {
     crate::elements::{ebcompact::*, peg::PegoutValue, AssetSorting, IssuanceValue},
     elements::{encode, secp256k1_zkp as zkp, AssetId},
@@ -44,9 +44,9 @@ const MAX_MEMPOOL_TXS: usize = 50;
 const BLOCK_LIMIT: usize = 10;
 const ADDRESS_SEARCH_LIMIT: usize = 10;
 
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 const ASSETS_PER_PAGE: usize = 25;
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 const ASSETS_MAX_PER_PAGE: usize = 100;
 
 const TTL_LONG: u32 = 157_784_630; // ttl for static resources (5 years)
@@ -67,28 +67,28 @@ struct BlockValue {
     previousblockhash: Option<BlockHash>,
     mediantime: u32,
 
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     nonce: u32,
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     bits: bitcoin::pow::CompactTarget,
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     difficulty: f64,
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     #[serde(skip_serializing_if = "Option::is_none")]
     ext: Option<elements::BlockExtData>,
 }
 
 impl BlockValue {
-    #[cfg_attr(feature = "liquid", allow(unused_variables))]
+    #[cfg_attr(feature = "sequentia", allow(unused_variables))]
     fn new(blockhm: BlockHeaderMeta) -> Self {
         let header = blockhm.header_entry.header();
         BlockValue {
             id: header.block_hash(),
             height: blockhm.header_entry.height() as u32,
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             version: header.version.to_consensus() as u32,
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             version: header.version,
             timestamp: header.time,
             tx_count: blockhm.meta.tx_count,
@@ -102,14 +102,14 @@ impl BlockValue {
             },
             mediantime: blockhm.mtp,
 
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             bits: header.bits,
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             nonce: header.nonce,
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             difficulty: header.difficulty_float(),
 
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             ext: Some(header.ext.clone()),
         }
     }
@@ -160,14 +160,14 @@ impl TransactionValue {
         let fee = get_tx_fee(&tx, &prevouts, config.network_type);
 
         let weight = tx.weight();
-        #[cfg(not(feature = "liquid"))] // rust-bitcoin has a wrapper Weight type
+        #[cfg(not(feature = "sequentia"))] // rust-bitcoin has a wrapper Weight type
         let weight = weight.to_wu();
 
         TransactionValue {
             txid: tx.compute_txid(),
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             version: tx.version.0 as u32,
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             version: tx.version as u32,
             locktime: tx.lock_time.to_consensus_u32(),
             vin: vins,
@@ -203,9 +203,9 @@ struct TxInValue {
     #[serde(skip_serializing_if = "Option::is_none")]
     inner_witnessscript_asm: Option<String>,
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     is_pegin: bool,
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     #[serde(skip_serializing_if = "Option::is_none")]
     issuance: Option<IssuanceValue>,
 }
@@ -213,7 +213,7 @@ struct TxInValue {
 impl TxInValue {
     fn new(txin: &TxIn, prevout: Option<&TxOut>, config: &Config) -> Self {
         let witness = &txin.witness;
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         let witness = &witness.script_witness;
 
         let witness = if !witness.is_empty() {
@@ -249,9 +249,9 @@ impl TxInValue {
 
             is_coinbase,
             sequence: txin.sequence,
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             is_pegin: txin.is_pegin,
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             issuance: if txin.has_issuance() {
                 Some(IssuanceValue::from(txin))
             } else {
@@ -272,40 +272,40 @@ struct TxOutValue {
     #[serde(skip_serializing_if = "Option::is_none")]
     scriptpubkey_address: Option<String>,
 
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     value: u64,
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     #[serde(skip_serializing_if = "Option::is_none")]
     value: Option<u64>,
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     #[serde(skip_serializing_if = "Option::is_none")]
     valuecommitment: Option<zkp::PedersenCommitment>,
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     #[serde(skip_serializing_if = "Option::is_none")]
     asset: Option<AssetId>,
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     #[serde(skip_serializing_if = "Option::is_none")]
     assetcommitment: Option<zkp::Generator>,
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pegout: Option<PegoutValue>,
 }
 
 impl TxOutValue {
     fn new(txout: &TxOut, config: &Config) -> Self {
-        #[cfg(not(feature = "liquid"))]
+        #[cfg(not(feature = "sequentia"))]
         let value = txout.value.to_sat();
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         let value = txout.value.explicit();
 
-        #[cfg(not(feature = "liquid"))]
+        #[cfg(not(feature = "sequentia"))]
         let is_fee = false;
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         let is_fee = txout.is_fee();
 
         let script = &txout.script_pubkey;
@@ -337,7 +337,7 @@ impl TxOutValue {
             "unknown"
         };
 
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         let pegout = PegoutValue::from_txout(txout, config.network_type, config.parent_network);
 
         TxOutValue {
@@ -346,13 +346,13 @@ impl TxOutValue {
             scriptpubkey_address: script_addr,
             scriptpubkey_type: script_type.to_string(),
             value,
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             valuecommitment: txout.value.commitment(),
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             asset: txout.asset.explicit(),
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             assetcommitment: txout.asset.commitment(),
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             pegout,
         }
     }
@@ -364,35 +364,35 @@ struct UtxoValue {
     vout: u32,
     status: TransactionStatus,
 
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     value: u64,
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     #[serde(skip_serializing_if = "Option::is_none")]
     value: Option<u64>,
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     #[serde(skip_serializing_if = "Option::is_none")]
     valuecommitment: Option<zkp::PedersenCommitment>,
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     #[serde(skip_serializing_if = "Option::is_none")]
     asset: Option<AssetId>,
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     #[serde(skip_serializing_if = "Option::is_none")]
     assetcommitment: Option<zkp::Generator>,
 
     // nonces are never explicit
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     #[serde(skip_serializing_if = "Option::is_none")]
     noncecommitment: Option<zkp::PublicKey>,
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     #[serde(skip_serializing_if = "Option::is_none")]
     surjection_proof: Option<zkp::SurjectionProof>,
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     #[serde(skip_serializing_if = "Option::is_none")]
     range_proof: Option<zkp::RangeProof>,
 }
@@ -403,22 +403,22 @@ impl From<Utxo> for UtxoValue {
             vout: utxo.vout,
             status: TransactionStatus::from(utxo.confirmed),
 
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             value: utxo.value,
 
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             value: utxo.value.explicit(),
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             valuecommitment: utxo.value.commitment(),
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             asset: utxo.asset.explicit(),
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             assetcommitment: utxo.asset.commitment(),
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             noncecommitment: utxo.nonce.commitment(),
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             surjection_proof: utxo.witness.surjection_proof.map(|p| *p),
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             range_proof: utxo.witness.rangeproof.map(|p| *p),
         }
     }
@@ -938,7 +938,7 @@ fn handle_request(
                 ttl,
             )
         }
-        #[cfg(not(feature = "liquid"))]
+        #[cfg(not(feature = "sequentia"))]
         (&Method::GET, Some(&"tx"), Some(hash), Some(&"merkleblock-proof"), None, None) => {
             let hash = Txid::from_str(hash)?;
 
@@ -1019,7 +1019,7 @@ fn handle_request(
             json_response(query.estimate_fee_map(), TTL_SHORT)
         }
 
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         (&Method::GET, Some(&"assets"), Some(&"registry"), None, None, None) => {
             let start_index: usize = query_params
                 .get("start_index")
@@ -1045,7 +1045,7 @@ fn handle_request(
                 .unwrap())
         }
 
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         (&Method::GET, Some(&"asset"), Some(asset_str), None, None, None) => {
             let asset_id = AssetId::from_str(asset_str)?;
             let asset_entry = query
@@ -1055,7 +1055,7 @@ fn handle_request(
             json_response(asset_entry, TTL_SHORT)
         }
 
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         (&Method::GET, Some(&"asset"), Some(asset_str), Some(&"txs"), None, None) => {
             let asset_id = AssetId::from_str(asset_str)?;
 
@@ -1080,7 +1080,7 @@ fn handle_request(
             json_response(prepare_txs(txs, query, config), TTL_SHORT)
         }
 
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         (
             &Method::GET,
             Some(&"asset"),
@@ -1102,7 +1102,7 @@ fn handle_request(
             json_response(prepare_txs(txs, query, config), TTL_SHORT)
         }
 
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         (&Method::GET, Some(&"asset"), Some(asset_str), Some(&"txs"), Some(&"mempool"), None) => {
             let asset_id = AssetId::from_str(asset_str)?;
 
@@ -1116,7 +1116,7 @@ fn handle_request(
             json_response(prepare_txs(txs, query, config), TTL_SHORT)
         }
 
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         (&Method::GET, Some(&"asset"), Some(asset_str), Some(&"supply"), param, None) => {
             let asset_id = AssetId::from_str(asset_str)?;
             let asset_entry = query
@@ -1186,7 +1186,7 @@ fn blocks(query: &Query, start_height: Option<usize>) -> Result<Response<Body>, 
         #[allow(unused_mut)]
         let mut value = BlockValue::new(blockhm);
 
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         {
             // exclude ExtData in block list view
             value.ext = None;
@@ -1213,22 +1213,22 @@ fn to_scripthash(
 }
 
 fn address_to_scripthash(addr: &str, network: Network) -> Result<FullHash, HttpError> {
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     let addr = address::Address::from_str(addr)?;
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     let addr = address::Address::parse_with_params(addr, network.address_params())?;
 
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     let is_expected_net = addr.is_valid_for_network(network.into());
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     let is_expected_net = addr.params == network.address_params();
 
     if !is_expected_net {
         bail!(HttpError::from("Address on invalid network".to_string()))
     }
 
-    #[cfg(not(feature = "liquid"))]
+    #[cfg(not(feature = "sequentia"))]
     let addr = addr.assume_checked();
 
     Ok(compute_script_hash(&addr.script_pubkey()))
@@ -1303,14 +1303,14 @@ impl From<std::string::FromUtf8Error> for HttpError {
     }
 }
 
-#[cfg(not(feature = "liquid"))]
+#[cfg(not(feature = "sequentia"))]
 impl From<address::ParseError> for HttpError {
     fn from(e: address::ParseError) -> Self {
         HttpError::from(e.to_string())
     }
 }
 
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 impl From<address::AddressError> for HttpError {
     fn from(e: address::AddressError) -> Self {
         HttpError::from(e.to_string())

@@ -1,6 +1,6 @@
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 use crate::elements::ebcompact::*;
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 use elements::address as elements_address;
 
 use crate::chain::{script, Network, Script, TxIn, TxOut};
@@ -18,13 +18,13 @@ pub trait ScriptToAsm: std::fmt::Debug {
     }
 }
 impl ScriptToAsm for bitcoin::ScriptBuf {}
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 impl ScriptToAsm for elements::Script {}
 
 pub trait ScriptToAddr {
     fn to_address_str(&self, network: Network) -> Option<String>;
 }
-#[cfg(not(feature = "liquid"))]
+#[cfg(not(feature = "sequentia"))]
 impl ScriptToAddr for bitcoin::Script {
     fn to_address_str(&self, network: Network) -> Option<String> {
         bitcoin::Address::from_script(self, bitcoin::Network::from(network))
@@ -32,7 +32,7 @@ impl ScriptToAddr for bitcoin::Script {
             .ok()
     }
 }
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 impl ScriptToAddr for elements::Script {
     fn to_address_str(&self, network: Network) -> Option<String> {
         elements_address::Address::from_script(self, None, network.address_params())
@@ -45,7 +45,7 @@ pub fn get_innerscripts(txin: &TxIn, prevout: &TxOut) -> InnerScripts {
     // Wrapped redeemScript for P2SH spends
     let redeem_script = if prevout.script_pubkey.is_p2sh() {
         if let Some(Ok(PushBytes(redeemscript))) = txin.script_sig.instructions().last() {
-            #[cfg(not(feature = "liquid"))] // rust-bitcoin has a PushBytes wrapper type
+            #[cfg(not(feature = "sequentia"))] // rust-bitcoin has a PushBytes wrapper type
             let redeemscript = redeemscript.as_bytes();
             Some(Script::from(redeemscript.to_vec()))
         } else {
@@ -60,13 +60,13 @@ pub fn get_innerscripts(txin: &TxIn, prevout: &TxOut) -> InnerScripts {
         || redeem_script.as_ref().map_or(false, |s| s.is_p2wsh())
     {
         let witness = &txin.witness;
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         let witness = &witness.script_witness;
 
         // rust-bitcoin returns witness items as a [u8] slice, while rust-elements returns a Vec<u8>
-        #[cfg(not(feature = "liquid"))]
+        #[cfg(not(feature = "sequentia"))]
         let wit_to_vec = Vec::from;
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         let wit_to_vec = Clone::clone;
 
         witness.iter().last().map(wit_to_vec).map(Script::from)

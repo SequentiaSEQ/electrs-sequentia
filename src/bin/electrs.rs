@@ -21,7 +21,7 @@ use electrs::{
     signal::Waiter,
 };
 
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 use electrs::elements::AssetRegistry;
 use electrs::metrics::MetricOpts;
 
@@ -95,7 +95,7 @@ fn run_server(config: Arc<Config>) -> Result<()> {
         tip = indexer.update(&daemon)?;
     }
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     let asset_db = config.asset_db_path.as_ref().map(|db_dir| {
         let asset_db = Arc::new(RwLock::new(AssetRegistry::new(db_dir.clone())));
         AssetRegistry::spawn_sync(asset_db.clone());
@@ -107,7 +107,7 @@ fn run_server(config: Arc<Config>) -> Result<()> {
         Arc::clone(&mempool),
         Arc::clone(&daemon),
         Arc::clone(&config),
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         asset_db,
     ));
 

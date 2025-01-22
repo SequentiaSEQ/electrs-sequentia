@@ -15,9 +15,9 @@ use error_chain::ChainedError;
 use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 use serde_json::{from_str, from_value, Value};
 
-#[cfg(not(feature = "liquid"))]
+#[cfg(not(feature = "sequentia"))]
 use bitcoin::consensus::encode::{deserialize, serialize_hex};
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 use elements::encode::{deserialize, serialize_hex};
 
 use crate::chain::{Block, BlockHash, BlockHeader, Network, Transaction, Txid};

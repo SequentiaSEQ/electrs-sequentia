@@ -7,12 +7,12 @@ use stderrlog::StdErrLog;
 use tempfile::TempDir;
 
 use serde_json::json;
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 use serde_json::Value;
 
-#[cfg(not(feature = "liquid"))]
+#[cfg(not(feature = "sequentia"))]
 use bitcoind::{self as noded, BitcoinD as NodeD};
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 use elementsd::{self as noded, ElementsD as NodeD};
 
 use noded::bitcoincore_rpc::{self, RpcApi};
@@ -30,7 +30,7 @@ use electrs::{
 
 pub struct TestRunner {
     config: Arc<Config>,
-    /// bitcoind::BitcoinD or an elementsd::ElementsD in liquid mode
+    /// bitcoind::BitcoinD or an elementsd::ElementsD in sequentia mode
     node: NodeD,
     _electrsdb: TempDir, // rm'd when dropped
     indexer: Indexer,
@@ -47,12 +47,12 @@ impl TestRunner {
         // Setup the bitcoind/elementsd config
         let mut node_conf = noded::Conf::default();
         {
-            #[cfg(not(feature = "liquid"))]
+            #[cfg(not(feature = "sequentia"))]
             let node_conf = &mut node_conf;
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             let node_conf = &mut node_conf.0;
 
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             node_conf.args.push("-anyonecanspendaremine=1");
 
             node_conf.view_stdout = std::env::var_os("RUST_LOG").is_some();
@@ -61,9 +61,9 @@ impl TestRunner {
         // Setup node
         let node = NodeD::with_conf(noded::exe_path().unwrap(), &node_conf).unwrap();
 
-        #[cfg(not(feature = "liquid"))]
+        #[cfg(not(feature = "sequentia"))]
         let (node_client, params) = (&node.client, &node.params);
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         let (node_client, params) = (node.client(), &node.params());
 
         log::info!("node params: {:?}", params);
@@ -72,13 +72,13 @@ impl TestRunner {
 
         // Needed to claim the initialfreecoins as our own
         // See https://github.com/ElementsProject/elements/issues/956
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         node_client.call::<Value>("rescanblockchain", &[])?;
 
-        #[cfg(not(feature = "liquid"))]
+        #[cfg(not(feature = "sequentia"))]
         let network_type = Network::Regtest;
-        #[cfg(feature = "liquid")]
-        let network_type = Network::LiquidRegtest;
+        #[cfg(feature = "sequentia")]
+        let network_type = Network::SequentiaRegtest;
 
         let mut daemon_subdir = params.cookie_file.clone();
         // drop `.cookie` filename, leaving just the network subdirectory
@@ -111,9 +111,9 @@ impl TestRunner {
             electrum_rpc_logging: None,
             zmq_addr: None,
 
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             asset_db_path: None, // XXX
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             parent_network: bitcoin::Network::Regtest,
             initial_sync_compaction: false,
             //#[cfg(feature = "electrum-discovery")]
@@ -141,14 +141,14 @@ impl TestRunner {
 
         let store = Arc::new(Store::open(&config.db_path.join("newindex"), &config));
 
-        let fetch_from = if !env::var("JSONRPC_IMPORT").is_ok() && !cfg!(feature = "liquid") {
+        let fetch_from = if !env::var("JSONRPC_IMPORT").is_ok() && !cfg!(feature = "sequentia") {
             // run the initial indexing from the blk files then switch to using the jsonrpc,
             // similarly to how electrs is typically used.
             FetchFrom::BlkFiles
         } else {
             // when JSONRPC_IMPORT is set, use the jsonrpc for the initial indexing too.
             // this runs faster on small regtest chains and can be useful for quicker local development iteration.
-            // this is also used on liquid regtest, which currently fails to parse the BlkFiles due to the magic bytes
+            // this is also used on sequentia regtest, which currently fails to parse the BlkFiles due to the magic bytes
             FetchFrom::Bitcoind
         };
 
@@ -175,7 +175,7 @@ impl TestRunner {
             Arc::clone(&mempool),
             Arc::clone(&daemon),
             Arc::clone(&config),
-            #[cfg(feature = "liquid")]
+            #[cfg(feature = "sequentia")]
             None, // TODO
         ));
 
@@ -192,9 +192,9 @@ impl TestRunner {
     }
 
     pub fn node_client(&self) -> &bitcoincore_rpc::Client {
-        #[cfg(not(feature = "liquid"))]
+        #[cfg(not(feature = "sequentia"))]
         return &self.node.client;
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         return &self.node.client();
     }
 
@@ -222,7 +222,7 @@ impl TestRunner {
         Ok(txid)
     }
 
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     pub fn send_asset(
         &mut self,
         addr: &Address,
@@ -249,16 +249,16 @@ impl TestRunner {
     }
 
     /// Generate and return a new address.
-    /// Returns the unconfidential address in Liquid mode, to make it interchangeable with Bitcoin addresses in tests.
+    /// Returns the unconfidential address in Sequentia mode, to make it interchangeable with Bitcoin addresses in tests.
     pub fn newaddress(&self) -> Result<Address> {
-        #[cfg(not(feature = "liquid"))]
+        #[cfg(not(feature = "sequentia"))]
         return Ok(raw_new_address(self.node_client())?);
 
-        #[cfg(feature = "liquid")]
+        #[cfg(feature = "sequentia")]
         return Ok(self.ct_newaddress()?.1);
     }
     /// Generate a new address, returning both the confidential and non-confidential versions
-    #[cfg(feature = "liquid")]
+    #[cfg(feature = "sequentia")]
     pub fn ct_newaddress(&self) -> Result<(Address, Address)> {
         let client = self.node_client();
         let c_addr = raw_new_address(client)?;
@@ -288,7 +288,7 @@ pub fn init_electrum_tester() -> Result<(ElectrumRPC, net::SocketAddr, TestRunne
     Ok((electrum_server, tester.config.electrum_rpc_addr, tester))
 }
 
-#[cfg(not(feature = "liquid"))]
+#[cfg(not(feature = "sequentia"))]
 fn raw_new_address(
     client: &bitcoincore_rpc::Client,
 ) -> bitcoincore_rpc::Result<Address<bitcoin::address::NetworkChecked>> {
@@ -296,7 +296,7 @@ fn raw_new_address(
 }
 
 // Returns the confidential address
-#[cfg(feature = "liquid")]
+#[cfg(feature = "sequentia")]
 fn raw_new_address(client: &bitcoincore_rpc::Client) -> bitcoincore_rpc::Result<Address> {
     // Must use raw call() because get_new_address() returns a bitcoin::Address and not an elements::Address
     Ok(client.call::<Address>("getnewaddress", &[])?)

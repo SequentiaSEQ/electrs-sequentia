@@ -41,8 +41,8 @@ jobs:
     - name: Tests (Bitcoin mode, REST+Electrum)
       run: RUST_LOG=debug cargo test
 
-    - name: Tests (Liquid mode, REST)
-      run: RUST_LOG=debug cargo test --features liquid
+    - name: Tests (Sequentia mode, REST)
+      run: RUST_LOG=debug cargo test --features sequentia
 
   nix:
     runs-on: ubuntu-latest
