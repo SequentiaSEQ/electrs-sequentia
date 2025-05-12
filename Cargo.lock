@@ -886,8 +886,8 @@ dependencies = [
 
 [[package]]
 name = "elements"
-version = "0.25.1"
-source = "git+https://github.com/SequentiaSEQ/rust-sequentia?branch=sequentia-testnet"
+version = "0.25.2"
+source = "git+https://github.com/SequentiaSEQ/rust-sequentia?branch=sequentia-testnet#6ab13634a14f7e4748357b55cd6325547d9c1426"
 dependencies = [
  "bech32 0.11.0",
  "bitcoin 0.32.5",

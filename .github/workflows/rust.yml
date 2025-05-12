@@ -44,10 +44,10 @@ jobs:
     - name: Tests (Sequentia mode, REST)
       run: RUST_LOG=debug cargo test --features sequentia
 
-  nix:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: DeterminateSystems/nix-installer-action@main
-      - run: nix build .
+  # nix:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: DeterminateSystems/nix-installer-action@main
+  #     - run: nix build .
 

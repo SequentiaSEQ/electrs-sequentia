@@ -26,7 +26,7 @@ bitcoin = { version = "0.32", features = ["serde"] }
 clap = "2.33.3"
 crossbeam-channel = "0.5.0"
 dirs = "5.0.1"
-elements = { version = "0.25", features = ["serde"], optional = true }
+elements = { version = "0.25.2", features = ["serde"], optional = true }
 error-chain = "0.12.4"
 glob = "0.3"
 itertools = "0.12"

@@ -21,7 +21,7 @@ lazy_static! {
             .parse()
             .unwrap();
     pub static ref NATIVE_ASSET_ID_TESTNET: AssetId =
-        "997d61a708543ee56de675c9afebb690007793429967d7a28c61358a033766cd"
+        "c8eccacf0953e1931cd31e434d8319101cc36e6c38b0e2104d8687552fae3e40"
             .parse()
             .unwrap();
     pub static ref NATIVE_ASSET_ID_REGTEST: AssetId =
